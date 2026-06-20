@@ -9,6 +9,7 @@ from scipy.io import wavfile
 import time
 import threading
 import datetime
+from pathlib import Path
 
 print("[VERIFICATION] Modern Python 3.14 libraries loaded successfully.")
 
