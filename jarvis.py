@@ -12,20 +12,22 @@ import datetime
 
 print("[VERIFICATION] Modern Python 3.14 libraries loaded successfully.")
 
-try:
-    engine = pyttsx3.init('sapi5')
-    engine.setProperty('rate', 170)   
-    engine.setProperty('volume', 1.0) 
-    print("[VERIFICATION] Text-to-Speech Engine initialized (SAPI5).")
-except Exception as e:
-    print(f"[ERROR] Engine init failed: {e}")
-    engine = pyttsx3.init()
-
 def speak(text):
     print(f"Jarvis: {text}")
-    engine.setProperty('volume', 1.0) 
-    engine.say(text)
-    engine.runAndWait()
+    try:
+        engine = pyttsx3.init('sapi5')
+        engine.setProperty('rate', 170)
+        engine.setProperty('volume', 1.0)
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        print(f"[ERROR] Text-to-speech failed: {e}")
+        try:
+            engine = pyttsx3.init()
+            engine.say(text)
+            engine.runAndWait()
+        except Exception as fallback_error:
+            print(f"[ERROR] Fallback engine also failed: {fallback_error}")
 
 def listen_command():
     fs = 44100  
@@ -93,7 +95,10 @@ if __name__ == "__main__":
             
         elif "open chrome" in command or "open google" in command:
             speak("Launching Google Chrome browser.")
-            threading.Thread(target=lambda: webbrowser.open("https://www.google.com")).start()
+            def launch_browser():
+                webbrowser.open("https://www.google.com")
+            
+            threading.Thread(target=launch_browser).start()
             
         elif "close chrome" in command or "close browser" in command:
             speak("Closing Google Chrome.")
