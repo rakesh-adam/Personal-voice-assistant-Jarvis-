@@ -23,7 +23,7 @@ except Exception as e:
 
 def speak(text):
     print(f"Jarvis: {text}")
-    engine.setProperty('volume', 1.0)  # Max volume check
+    engine.setProperty('volume', 1.0) 
     engine.say(text)
     engine.runAndWait()
 
@@ -35,7 +35,6 @@ def listen_command():
     print("\n[STATUS] Jarvis is listening (4-second window)...")
     
     try:
-        # Use sounddevice to record
         myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1, dtype='int16')
         sd.wait()  
         wavfile.write(temp_filename, fs, myrecording)
@@ -72,12 +71,10 @@ if __name__ == "__main__":
         if not command:
             continue
             
-        # 1. System Shutdown
         if any(word in command for word in ["exit", "goodbye", "stop", "power down"]):
             speak("Powering down system. Goodbye, Rakesh.")
             break
             
-        # 2. Tell Current Time & Date
         elif "time" in command:
             current_time = datetime.datetime.now().strftime("%I:%M %p")
             speak(f"The current time is {current_time}.")
@@ -86,7 +83,6 @@ if __name__ == "__main__":
             current_date = datetime.datetime.now().strftime("%A, %B %d, %Y")
             speak(f"Today is {current_date}.")
             
-        # 3. App Management (Open & Close)
         elif "open notepad" in command:
             speak("Opening Notepad application.")
             subprocess.Popen(["notepad.exe"])
@@ -103,9 +99,7 @@ if __name__ == "__main__":
             speak("Closing Google Chrome.")
             subprocess.Popen("taskkill /f /im chrome.exe", shell=True)
             
-        # 4. Media Controls
         elif "play" in command and ("youtube" in command or "song" in command):
-            # Dynamic cleaning of the query
             query = command.replace("play", "").replace("on youtube", "").replace("youtube", "").strip()
             if query:
                 speak(f"Playing {query} on YouTube.")
@@ -113,7 +107,6 @@ if __name__ == "__main__":
             else:
                 speak("What would you like me to play?")
             
-        # 5. Greetings & Personalization
         elif "your name" in command:
             speak("My name is Jarvis, your system assistant.")
 
