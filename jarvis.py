@@ -1,0 +1,127 @@
+import speech_recognition as sr
+import pyttsx3
+import os
+import subprocess
+import webbrowser
+import pywhatkit
+import sounddevice as sd
+from scipy.io import wavfile
+import time
+import threading
+import datetime
+
+print("[VERIFICATION] Modern Python 3.14 libraries loaded successfully.")
+
+try:
+    engine = pyttsx3.init('sapi5')
+    engine.setProperty('rate', 170)   
+    engine.setProperty('volume', 1.0) 
+    print("[VERIFICATION] Text-to-Speech Engine initialized (SAPI5).")
+except Exception as e:
+    print(f"[ERROR] Engine init failed: {e}")
+    engine = pyttsx3.init()
+
+def speak(text):
+    print(f"Jarvis: {text}")
+    engine.setProperty('volume', 1.0)  # Max volume check
+    engine.say(text)
+    engine.runAndWait()
+
+def listen_command():
+    fs = 44100  
+    seconds = 4  
+    temp_filename = "temp_voice.wav"
+
+    print("\n[STATUS] Jarvis is listening (4-second window)...")
+    
+    try:
+        # Use sounddevice to record
+        myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1, dtype='int16')
+        sd.wait()  
+        wavfile.write(temp_filename, fs, myrecording)
+
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(temp_filename) as source:
+            audio = recognizer.record(source)
+        
+        print("[STATUS] Processing audio...")
+        command = recognizer.recognize_google(audio)
+        print(f"[USER]: {command}")
+        
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+            
+        return command.lower().strip()
+        
+    except sr.UnknownValueError:
+        print("[OUTPUT] Audio heard, but intent unclear.")
+        return ""
+    except Exception as e:
+        print(f"[STATUS] Listening window closed or reset: {e}")
+        if os.path.exists(temp_filename):
+            try: os.remove(temp_filename)
+            except: pass
+        return ""
+
+if __name__ == "__main__":
+    speak("Phase one system active. Hello Rakesh.")
+    
+    while True:
+        command = listen_command()
+        
+        if not command:
+            continue
+            
+        # 1. System Shutdown
+        if any(word in command for word in ["exit", "goodbye", "stop", "power down"]):
+            speak("Powering down system. Goodbye, Rakesh.")
+            break
+            
+        # 2. Tell Current Time & Date
+        elif "time" in command:
+            current_time = datetime.datetime.now().strftime("%I:%M %p")
+            speak(f"The current time is {current_time}.")
+            
+        elif "date" in command or "today" in command:
+            current_date = datetime.datetime.now().strftime("%A, %B %d, %Y")
+            speak(f"Today is {current_date}.")
+            
+        # 3. App Management (Open & Close)
+        elif "open notepad" in command:
+            speak("Opening Notepad application.")
+            subprocess.Popen(["notepad.exe"])
+            
+        elif "close notepad" in command:
+            speak("Closing Notepad.")
+            subprocess.Popen("taskkill /f /im notepad.exe", shell=True)
+            
+        elif "open chrome" in command or "open google" in command:
+            speak("Launching Google Chrome browser.")
+            threading.Thread(target=lambda: webbrowser.open("https://www.google.com")).start()
+            
+        elif "close chrome" in command or "close browser" in command:
+            speak("Closing Google Chrome.")
+            subprocess.Popen("taskkill /f /im chrome.exe", shell=True)
+            
+        # 4. Media Controls
+        elif "play" in command and ("youtube" in command or "song" in command):
+            # Dynamic cleaning of the query
+            query = command.replace("play", "").replace("on youtube", "").replace("youtube", "").strip()
+            if query:
+                speak(f"Playing {query} on YouTube.")
+                threading.Thread(target=lambda: pywhatkit.playonyt(query)).start()
+            else:
+                speak("What would you like me to play?")
+            
+        # 5. Greetings & Personalization
+        elif "your name" in command:
+            speak("My name is Jarvis, your system assistant.")
+
+        elif "my name" in command:
+            speak("Your name is Rakesh.")
+
+        elif any(greet in command for greet in ["hey jarvis", "hello jarvis", "wake up"]):
+            speak("Hello Rakesh! System is fully operational. How can I assist you?")
+            
+        else:
+            print(f"[OUTPUT] Command recognized but unmapped: '{command}'")
