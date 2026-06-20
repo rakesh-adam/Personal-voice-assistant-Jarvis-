@@ -90,21 +90,13 @@ if __name__ == "__main__":
             speak("Opening Notepad application.")
             subprocess.Popen(["notepad.exe"])
             
-        elif "close notepad" in command:
-            speak("Closing Notepad.")
-            subprocess.Popen("taskkill /f /im notepad.exe", shell=True)
-            
         elif "open chrome" in command or "open google" in command:
             speak("Launching Google Chrome browser.")
             def launch_browser():
                 webbrowser.open("https://www.google.com")
             
             threading.Thread(target=launch_browser).start()
-            
-        elif "close chrome" in command or "close browser" in command:
-            speak("Closing Google Chrome.")
-            subprocess.Popen("taskkill /f /im chrome.exe", shell=True)
-            
+               
         elif "play" in command and ("youtube" in command or "song" in command):
             query = command.replace("play", "").replace("on youtube", "").replace("youtube", "").strip()
             if query:
