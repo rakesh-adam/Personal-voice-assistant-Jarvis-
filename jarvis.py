@@ -52,12 +52,39 @@ def ask_ai_brain(prompt):
             model='gemini-2.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
-                system_instruction="You are Jarvis, a highly advanced, witty, and helpful AI assistant. Keep responses short, direct, and conversational for text-to-speech.",
-                max_output_tokens=150,
-                temperature=0.7
+                system_instruction="You are Jarvis, a concise AI assistant." \
+                " IMPORTANT: Answer in exactly 2-3 short, punchy sentences maximum." \
+                " Be factual and complete within those sentences. End with a period.",
+                max_output_tokens=600,
+                temperature=0.3
             )
         )
-        return response.text.strip()
+        
+        raw_text = ""
+        
+        if not response.candidates or len(response.candidates) == 0:
+            print("[ERROR] No candidates in Gemini response")
+            return "I encountered an issue retrieving a response from my neural network."
+        
+        candidate = response.candidates[0]
+        
+        finish_reason = candidate.finish_reason if hasattr(candidate, 'finish_reason') else None
+        if finish_reason == "MAX_TOKENS":
+            print("[WARNING] Response truncated due to token limit - increasing tokens may help")
+        
+        if candidate.content and candidate.content.parts:
+            for part in candidate.content.parts:
+                if hasattr(part, 'text') and part.text:
+                    raw_text += part.text
+        
+        raw_text = raw_text.strip()
+        
+        if not raw_text:
+            print("[ERROR] No text extracted from Gemini response")
+            return "I encountered an issue processing my response."
+        
+        clean_text = raw_text.replace("**", "").replace("*", "").replace("`", "").replace("_", "")
+        return clean_text
     except Exception as e:
         print(f"[ERROR] Gemini API execution failed: {e}")
         return "I encountered a connectivity glitch inside my neural array."
@@ -173,7 +200,9 @@ if __name__ == "__main__":
             print(f"[OUTPUT] Command recognized but unmapped: '{command}'. Routing to AI Brain...")
             ai_response = ask_ai_brain(command)
             speak(ai_response)
+            cooldown_duration = max(1.5, min(1.0, len(ai_response) / 30))
+            print(f"[SYSTEM] Keeping microphone closed for {round(cooldown_duration, 1)}s until speech finishes...")
+            time.sleep(cooldown_duration)
             
-        time.sleep(1.2)
-        
+        time.sleep(0.4) 
         last_activity_time = time.time()
