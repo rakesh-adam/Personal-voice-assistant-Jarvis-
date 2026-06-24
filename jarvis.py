@@ -12,9 +12,15 @@ import datetime
 from pathlib import Path
 from google import genai
 from google.genai import types
+import psutil
+CONTACTS = {
+    "my phone": "+9",
+    "friend": "+",   
+    "bro": "+91XXXXXXXXXX"
+}
 
 try:
-    client = genai.Client()
+    client = genai.Client(api_key="_api_key_here")
     AI_BRAIN_ACTIVE = True
     print("[STATUS] AI Brain (Gemini API) initialized successfully.")
 except Exception as e:
@@ -189,13 +195,65 @@ if __name__ == "__main__":
                 threading.Thread(target=lambda: pywhatkit.playonyt(query)).start()
             else:
                 speak("What would you like me to play?")
-            
+
+           
         elif "your name" in command:
             speak("My name is Jarvis, your system assistant.")
 
         elif "my name" in command:
             speak("Your name is Rakesh.")
+
+        elif "cpu" in command or "processor" in command:
+            cpu_usage = psutil.cpu_percent(interval=0.1)
+            speak(f"Current core load is at {cpu_usage} percent, Rakesh.")
             
+        elif "battery" in command or "power status" in command:
+            battery = psutil.sensors_battery()
+            if battery:
+                percent = battery.percent
+                is_plugged = "plugged in and charging" if battery.power_plugged else "running on battery power"
+                speak(f"The system is at {percent} percent capacity and currently {is_plugged}.")
+            else:
+                speak("I am unable to detect a hardware battery array on this machine.")
+                
+        elif "network" in command or "internet speed" in command:
+            speak("Running quick network diagnostic check.")
+            try:
+                import socket
+                start_time = time.time()
+                socket.create_connection(("8.8.8.8", 53), timeout=3)
+                latency = round((time.time() - start_time) * 1000, 1)
+                speak(f"Network status: Operational. Ping latency is {latency} milliseconds.")
+            except Exception:
+                speak("Network status: Offline or experiencing high packet drops.")
+
+        elif "whatsapp" in command or "send a message" in command:
+            speak("Who do you want to message, Rakesh?")
+            recipient = listen_command(seconds=4)
+            
+            if recipient in CONTACTS:
+                phone_number = CONTACTS[recipient]
+                speak(f"Found {recipient}. What is the message?")
+                message_text = listen_command(seconds=6) 
+                
+                if message_text:
+                    speak(f"Sending message to {recipient} now.")
+                    
+                    def send_whatsapp():
+                        pywhatkit.sendwhatmsg_instantly(
+                            phone_no=phone_number,
+                            message=message_text,
+                            wait_time=15, 
+                            tab_close=True, 
+                            close_time=3
+                        )
+                    
+                    threading.Thread(target=send_whatsapp).start()
+                else:
+                    speak("Message was empty. Outbound sequence aborted.")
+            else:
+                speak(f"I couldn't find {recipient} in your contact database.")
+
         else:
             print(f"[OUTPUT] Command recognized but unmapped: '{command}'. Routing to AI Brain...")
             ai_response = ask_ai_brain(command)
